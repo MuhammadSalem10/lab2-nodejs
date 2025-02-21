@@ -1,5 +1,6 @@
 const http = require("http");
 const fs = require("fs");
+const { Readable } = require("stream");
 
 const DB_FILE = "employees.json";
 const IMAGE_SERBAL = "serbal.jpeg";
@@ -68,13 +69,13 @@ function serveHomePage(res) {
       `);
     } catch (error) {
       console.error("Error parsing employee data:", error);
-      serve500Page(res); 
+      serve500Page(res);
     }
   });
 
   stream.on("error", (err) => {
     console.error("Error reading employee data:", err);
-    serve500Page(res); 
+    serve500Page(res);
   });
 }
 
@@ -107,7 +108,7 @@ function serveAddEmployeePage(res) {
           event.preventDefault();
           const formData = new FormData(event.target);
           fetch("/employee", { method: "POST", body: JSON.stringify(Object.fromEntries(formData)), headers: { "Content-Type": "application/json" } })
-            .then(() => window.location = "/");
+            
         }
       </script>
     </body>
@@ -116,24 +117,52 @@ function serveAddEmployeePage(res) {
 }
 
 function serveAstronomyPage(res) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <link rel="stylesheet" href="/${CSS_FILE}">
+        <title>Astronomy</title>
+      </head>
+      <body>
+        <nav><a href="/">Home</a></nav>
+        <h1>Astronomy</h1>
+        <img src="/${IMAGE_ASTRONOMY}" alt="Astronomy">
+        <br>
+        <a href="/astronomy/download">Download Image</a>
+      </body>
+    </html>
+  `;
   res.writeHead(200, { "Content-Type": "text/html" });
-  res.end(
-    `<html><head><link rel="stylesheet" href="/${CSS_FILE}"></head><body><nav><a href="/">Home</a></nav><h1>Astronomy</h1><img src="/${IMAGE_ASTRONOMY}"><br><a href="/astronomy/download">Download Image</a></body></html>`
-  );
+  const stream = Readable.from(html);
+  stream.pipe(res);
 }
 
 function serveSerbalPage(res) {
+  const html = `<html>
+  <head>
+    <title>Serbal image</title>
+    <link rel="stylesheet" href="/${CSS_FILE}" />
+  </head>
+  <body>
+    <nav>
+      <a href="/">Home</a>
+    </nav>
+    <h1>Serbal</h1>
+    <img src="/${IMAGE_SERBAL}" />
+  </body>
+</html>
+  `;
   res.writeHead(200, { "Content-Type": "text/html" });
-  res.end(
-    `<html><head><link rel="stylesheet" href="/${CSS_FILE}"></head><body><nav><a href="/">Home</a></nav><h1>Serbal</h1><img src="/${IMAGE_SERBAL}"></body></html>`
-  );
+  const steram = Readable.from(html);
+  steram.pipe(res);
 }
 
 function serveStaticFile(res, fileName, contentType) {
   const stream = fs.createReadStream(fileName);
   stream.on("error", (err) => {
     console.error("Error serving static file:", err);
-    serve404Page(res); 
+    serve404Page(res);
     return;
   });
   res.writeHead(200, { "Content-Type": contentType });
@@ -179,7 +208,7 @@ function handleAddEmployee(req, res) {
       });
     } catch (error) {
       console.error("Error parsing request body:", error);
-      res.writeHead(400).end("Invalid request body"); 
+      res.writeHead(400).end("Invalid request body");
     }
   });
 }
